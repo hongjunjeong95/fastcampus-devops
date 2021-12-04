@@ -31,7 +31,7 @@ resource "aws_default_vpc" "default" {
 }
 
 module "security_group" {
-  source  = "app.terraform.io/karrotpay/network/aws//modules/security-group"
+  source  = "tedilabs/network/aws//modules/security-group"
   version = "0.24.0"
 
   name        = "${local.vpc_name}-provisioner-userdata"
@@ -76,11 +76,15 @@ module "security_group" {
 # Userdata
 ###################################################
 
+# user data 같은 경우는 ec2에서 제공해주는 기능이기 때문에
+# terraforma에 script 실행에 대한 로그가 남지 않는다.
 resource "aws_instance" "userdata" {
   ami           = data.aws_ami.ubuntu.image_id
   instance_type = "t2.micro"
-  key_name      = "fastcampus"
+  key_name      = "insomenia-public-keypair"
 
+# user data script는 ec2 instance가 첫 부팅될 때만 사용할 수 있다.
+# 만약 파일을 수정하고 `tf apply`를 하면 terraform이 instance를 삭제하고 다시 설치하냐고 물어본다.
   user_data = <<EOT
 #!/bin/bash
 sudo apt-get update
@@ -101,30 +105,39 @@ EOT
 # Provisioner - in EC2
 ###################################################
 
+# provisioner 같은 경우 terraform에서 제공해주는 기능이기 때문에
+# ec2에 connection을 맺는 것부터 script가 실행되는 로그가 전부 남는다.
 # resource "aws_instance" "provisioner" {
 #   ami           = data.aws_ami.ubuntu.image_id
 #   instance_type = "t2.micro"
-#   key_name      = "fastcampus"
-#
+#   key_name      = "insomenia-public-keypair"
+
 #   vpc_security_group_ids = [
 #     module.security_group.id,
 #   ]
-#
+
 #   tags = {
 #     Name = "fastcampus-provisioner"
 #   }
-#
+
+#   # provisioner는 기본적으로 creation-time provisioner다.
+#   # 즉 instance가 생성될 때마다 실행된다. sciprt를 추가해도 userdata와 달리 아무런 변화가 없다.
 #   provisioner "remote-exec" {
 #     inline = [
 #       "sudo apt-get update",
 #       "sudo apt-get install -y nginx",
 #     ]
-#
+#     # inline말고도 script, scripts를 사용할 수 있는데
+#     # script는 로컬에 있는 script 파일을 올린다.
+
 #     connection {
 #       type = "ssh"
 #       user = "ubuntu"
 #       host = self.public_ip
+#       # self는 provisioner에서만 사용할 수 있는 변수다.
 #     }
+#     # ssh-agent를 사용하던가 password나 private_key를 사용해야 한다.
+#     # 현업에서는 ssh-agent를 사용해야 코드 상에 비밀 데이터가 남지 않아서 보안상 좋다.
 #   }
 # }
 
@@ -136,7 +149,7 @@ EOT
 resource "aws_instance" "provisioner" {
   ami           = data.aws_ami.ubuntu.image_id
   instance_type = "t2.micro"
-  key_name      = "fastcampus"
+  key_name      = "insomenia-public-keypair"
 
   vpc_security_group_ids = [
     module.security_group.id,
