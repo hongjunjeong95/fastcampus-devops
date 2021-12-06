@@ -23,7 +23,7 @@ resource "aws_instance" "grafana" {
   ami           = data.aws_ami.fastcampus["grafana"].image_id
   instance_type = "t2.micro"
   subnet_id     = local.subnet_groups["private"].ids[0]
-  key_name      = "fastcampus"
+  key_name      = "insomenia-private-keypair"
 
   vpc_security_group_ids = [
     module.sg__ssh.id,
@@ -45,7 +45,7 @@ resource "aws_instance" "openvpn" {
   ami           = data.aws_ami.fastcampus["openvpn"].image_id
   instance_type = "t2.micro"
   subnet_id     = local.subnet_groups["public"].ids[0]
-  key_name      = "fastcampus"
+  key_name      = "insomenia-public-keypair"
 
   associate_public_ip_address = false
   vpc_security_group_ids = [

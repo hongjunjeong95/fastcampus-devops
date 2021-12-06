@@ -2,6 +2,7 @@
 
 set -euf -o pipefail
 
+# 169.254.169.254는 ec2 메타데이터 서버다. magic ip라고도 한다.
 public_ip=`curl 169.254.169.254/latest/meta-data/public-ipv4`
 
 echo "------------------"
@@ -10,6 +11,8 @@ echo $OVPN_ROUTES
 echo $OVPN_DNS_SERVERS
 echo "------------------"
 ## Run openvpn-ldap-otp container
+#  -e "OVPN_NETWORK=${OVPN_NETWORK:-172.22.16.0 255.255.240.0}" \ openvpn에서 사용하게 될 가상 ip 대역
+#  -e "OVPN_DNS_SERVERS=${OVPN_DNS_SERVERS}" \ VPC private DNS 서버를 이용하기 위함
 docker run \
  --name openvpn \
  --restart always \

@@ -24,7 +24,7 @@ resource "aws_instance" "demo" {
   ami           = data.aws_ami.ubuntu.image_id
   instance_type = "t3.small"
   subnet_id     = local.subnet_groups["public"].ids[0]
-  key_name      = "fastcampus"
+  key_name      = "insomenia-public-keypair"
 
   associate_public_ip_address = true
   vpc_security_group_ids = [

@@ -23,6 +23,7 @@ build {
 /**
  * Fill-in
  */
+# extend는 가능하지만 overwrite는 불가능하다.
 build {
   name    = "fastcampus-packer-fill-in"
 

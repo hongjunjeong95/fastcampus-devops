@@ -4,7 +4,7 @@ set -euf -o pipefail
 
 DOCKER_USER=ubuntu
 
-# Install dependencies
+# Install dependencies for docker
 apt-get install -y \
   apt-transport-https \
   ca-certificates \

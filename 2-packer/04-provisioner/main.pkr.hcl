@@ -6,6 +6,8 @@ build {
     ami_name = "fastcampus-packer-nginx"
   }
 
+  # provisioner는 정의한 순서가 중요!!
+
   provisioner "shell" {
     inline = [
       "sudo apt-get update",
@@ -21,7 +23,7 @@ build {
   provisioner "shell" {
     inline = [
       "echo ${source.name} and ${source.type}",
-      "whoami",
+      # "whoami",
       "sudo apt-get install -y nginx",
       "sudo cp /tmp/index.html /var/www/html/index.html"
     ]
