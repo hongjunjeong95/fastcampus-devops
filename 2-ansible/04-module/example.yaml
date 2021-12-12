@@ -1,5 +1,4 @@
 ---
-
 - name: Example
   hosts: ubuntu
   become: true
@@ -12,10 +11,12 @@
       command: "echo 'Hello World!'"
 
     # Docs: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html
+    # linefile은 설정파일을 관리할 때 사용하는 모듈. 파일에 특정 라인이 있는지 보장해주는 모듈.
+    # /etc/resolv.conf에 'nameserver 8.8.8.8' line이 있는지 확인 후 없으면 추가.
     - name: "Add DNS server to resolv.conf"
       lineinfile:
         path: /etc/resolv.conf
-        line: 'nameserver 8.8.8.8'
+        line: "nameserver 8.8.8.8"
 
     # Docs: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_module.html
     - name: "Install Nginx"
@@ -41,7 +42,7 @@
         dest: /etc/nginx/sites-enabled/default
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
-        mode: '0644'
+        mode: "0644"
 
     # Docs: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/service_module.html
     - name: "Ensure nginx service started"
