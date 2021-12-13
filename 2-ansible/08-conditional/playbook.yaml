@@ -1,5 +1,4 @@
 ---
-
 - name: Example
   hosts: all
   become: true
@@ -37,17 +36,17 @@
     - name: "Show items between 10 and 100"
       debug:
         var: item
-      loop: [ 0, 192, 154, 456, 7, 2, -1, 55, 234]
+      loop: [0, 192, 154, 456, 7, 2, -1, 55, 234]
       when:
-      - item >= 10
-      - item <= 100
+        - item >= 10
+        - item <= 100
 
     - name: "Show items not between 10 and 100"
       debug:
         var: item
-      loop: [ 0, 192, 154, 456, 7, 2, -1, 55, 234]
+      loop: [0, 192, 154, 456, 7, 2, -1, 55, 234]
       when:
-      - (item < 10) or (item > 100)
+        - (item < 10) or (item > 100)
 
     - name: "Install Packages on Ubuntu"
       apt:
@@ -55,22 +54,22 @@
         update_cache: true
         state: "present"
       loop:
-      - git
-      - curl
-      - htop
+        - git
+        - curl
+        - htop
       when:
-      - ansible_facts['distribution'] == 'Ubuntu'
+        - ansible_facts['distribution'] == 'Ubuntu'
 
     - name: "Install Packages on Amazon Linux"
       yum:
         name: "{{ item }}"
         state: "present"
       loop:
-      - git
-      - curl
-      - htop
+        - git
+        - curl
+        - htop
       when:
-      - ansible_facts['distribution'] == 'Amazon'
+        - ansible_facts['distribution'] == 'Amazon'
 
     - name: "Print users"
       command: "cut -d: -f1 /etc/passwd"
