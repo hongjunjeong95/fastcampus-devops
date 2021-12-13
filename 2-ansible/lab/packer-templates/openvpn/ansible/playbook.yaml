@@ -6,109 +6,118 @@
     openvpn_server_cn: "{{ ansible_ec2_public_ipv4 }}"
 
   tasks:
-  - name: "Gather EC2 Instance Metadata"
-    amazon.aws.ec2_metadata_facts: {}
+    - name: "Gather EC2 Instance Metadata"
+      amazon.aws.ec2_metadata_facts: {}
 
-  - name: "Set VPC CIDR"
-    set_fact:
-      vpc_cidr: "{{ (ansible_facts | dict2items | selectattr('key', 'match', '^ec2_network_interfaces_macs_.*_vpc_ipv4_cidr_block$') | map(attribute='value'))[0] }}"
+    - name: "Set VPC CIDR"
+      set_fact:
+        vpc_cidr: "{{ (ansible_facts | dict2items | selectattr('key', 'match', '^ec2_network_interfaces_macs_.*_vpc_ipv4_cidr_block$') | map(attribute='value'))[0] }}"
 
-  - name: "Set VPC facts"
-    set_fact:
-      vpc_dns_server: '{{ vpc_cidr | ipaddr(2) | ipaddr("address") }}'
-      vpc_network: '{{ vpc_cidr | ipaddr("network") }}'
-      vpc_netmask: '{{ vpc_cidr | ipaddr("netmask") }}'
+    - name: "Set VPC facts"
+      set_fact:
+        vpc_dns_server: '{{ vpc_cidr | ipaddr(2) | ipaddr("address") }}'
+        vpc_network: '{{ vpc_cidr | ipaddr("network") }}'
+        vpc_netmask: '{{ vpc_cidr | ipaddr("netmask") }}'
 
-  - name: "Install comman packages"
-    apt:
-      name: "{{ item }}"
-      state: latest
-    loop:
-    - build-essential
-    - software-properties-common
-    - htop
-    - jq
-    - wget
-    - curl
-    - git
+    - name: "Install comman packages"
+      apt:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - build-essential
+        - software-properties-common
+        - htop
+        - jq
+        - wget
+        - curl
+        - git
 
-  - name: "Install required system packages for Docker"
-    apt:
-      name: "{{ item }}"
-      state: latest
-    loop:
-    - ca-certificates
-    - curl
-    - gnupg
-    - lsb-release
+    - name: "Install required system packages for Docker"
+      apt:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - ca-certificates
+        - curl
+        - gnupg
+        - lsb-release
 
-  - name: Add Docker GPG apt Key
-    apt_key:
-      url: https://download.docker.com/linux/ubuntu/gpg
-      state: present
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
 
-  - name: Add docker repository to apt
-    apt_repository:
-      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
-      state: present
+    - name: Add docker repository to apt
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+        state: present
 
-  - name: Update apt and install docker-ce
-    apt:
-      name:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      state: latest
-      update_cache: true
+    - name: Update apt and install docker-ce
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: latest
+        update_cache: true
 
-  - name: Add user to docker group
-    user:
-      name: "ubuntu"
-      groups: docker
-      append: true
+    - name: Add user to docker group
+      user:
+        name: "ubuntu"
+        groups: docker
+        append: true
 
-  - name: Install docker Python Package
-    pip:
-      name: docker
-      state: present
+    - name: Install docker Python Package
+      pip:
+        name: docker
+        state: present
 
-  - name: Run OpenVPN container on Docker
-    community.docker.docker_container:
-      name: openvpn
-      image: wheelybird/openvpn-ldap-otp:v1.4
-      restart_policy: always
-      env:
-        OVPN_SERVER_CN: "{{ openvpn_server_cn }}"
-        OVPN_NETWORK: "172.22.16.0 255.255.240.0"
-        OVPN_ROUTES: "172.22.16.0 255.255.240.0, {{ vpc_network }} {{ vpc_netmask }}"
-        OVPN_DNS_SERVERS: "{{ vpc_dns_server }}"
-        OVPN_NAT: "true"
-        OVPN_ENABLE_COMPRESSION: "false"
-        USE_CLIENT_CERTIFICATE: "true"
-      ports:
-      - "1194:1194/udp"
-      capabilities:
-      - NET_ADMIN
-      volumes:
-      - openvpn-data:/etc/openvpn
-      detach: true
-      container_default_behavior: compatibility
-      state: "{{ openvpn_create_client_config | default(false) | ternary('started', 'present') }}"
+    - name: Run OpenVPN container on Docker
+      community.docker.docker_container:
+        name: openvpn
+        image: wheelybird/openvpn-ldap-otp:v1.4
+        # unless_stopped는 ec2가 재시작을 하더라도 실행을 보장하지만 always는 재시작이 되더라도 실행을 보장하지 않음
+        # 그래서 ec2가 재시작을 하더라도 컨테이너가 멈춰있을 수 있다.
+        # 여기서 always를 한 이유는 grafana 같은 경우는 packer image build를 하고 나서 다시 해당 image로 인스턴스화가 되더라도
+        # 변경되는 정보가 없어서 이 상태로 실행이 되도 된다.
+        # openVPN 같은 경우는 openVPN 서버 CN 값과 vpc_cidr 관련 정보들이 ami가 어떤 네트워크 인스턴스로 띄어지느냐에 따라서 달라진다.
+        # 그래서 기존에 만들어진 이 값들을 그대로 사용하면 안 되고 이 값들이 업데이트 됨에 따라서 재시작 될 필요가 있다.
+        restart_policy: always
+        env:
+          OVPN_SERVER_CN: "{{ openvpn_server_cn }}"
+          OVPN_NETWORK: "172.22.16.0 255.255.240.0"
+          OVPN_ROUTES: "172.22.16.0 255.255.240.0, {{ vpc_network }} {{ vpc_netmask }}"
+          OVPN_DNS_SERVERS: "{{ vpc_dns_server }}"
+          OVPN_NAT: "true"
+          OVPN_ENABLE_COMPRESSION: "false"
+          USE_CLIENT_CERTIFICATE: "true"
+        ports:
+          - "1194:1194/udp"
+        capabilities:
+          - NET_ADMIN
+        volumes:
+          - openvpn-data:/etc/openvpn
+        detach: true
+        container_default_behavior: compatibility
+        # openvpn_create_client_config 변수가 정의되어 있지 않다면 default(false), 즉 false 값을 정의
+        # 만약 true면 tenary의 'started'가 실행되고 false면 'present'가 실행된다.
+        # 'present'는 도커 컨테이너는 생성하지만 실행하지는 않는다.
+        state: "{{ openvpn_create_client_config | default(false) | ternary('started', 'present') }}"
 
-  - name: Get OpenVPN client configurations
-    community.docker.docker_container_exec:
-      container: openvpn
-      command: show-client-config
-    register: result
-    until:
-    - result.rc == 0
-    - '"END PRIVATE KEY" in result.stdout'
-    retries: 100
-    delay: 10
-    when: openvpn_create_client_config | default(false)
+    - name: Get OpenVPN client configurations
+      community.docker.docker_container_exec:
+        container: openvpn
+        command: show-client-config
+      register: result
+      until:
+        - result.rc == 0
+        - '"END PRIVATE KEY" in result.stdout'
+      retries: 100
+      delay: 10
+      when: openvpn_create_client_config | default(false)
 
-  - name: Save Client Configurations
-    copy:
-      content: "{{ result.stdout }}"
-      dest: /opt/fastcampus.ovpn
-    when: openvpn_create_client_config | default(false)
+    - name: Save Client Configurations
+      copy:
+        content: "{{ result.stdout }}"
+        dest: /opt/fastcampus.ovpn
+      when: openvpn_create_client_config | default(false)
