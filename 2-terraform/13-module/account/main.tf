@@ -1,3 +1,4 @@
+# aws account id를 가져올 수 있음
 data "aws_caller_identity" "this" {}
 
 

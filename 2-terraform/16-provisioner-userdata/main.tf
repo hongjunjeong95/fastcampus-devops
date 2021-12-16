@@ -81,7 +81,7 @@ module "security_group" {
 resource "aws_instance" "userdata" {
   ami           = data.aws_ami.ubuntu.image_id
   instance_type = "t2.micro"
-  key_name      = "insomenia-public-keypair"
+  key_name      = "dev"
 
 # user data script는 ec2 instance가 첫 부팅될 때만 사용할 수 있다.
 # 만약 파일을 수정하고 `tf apply`를 하면 terraform이 instance를 삭제하고 다시 설치하냐고 물어본다.
@@ -110,7 +110,7 @@ EOT
 # resource "aws_instance" "provisioner" {
 #   ami           = data.aws_ami.ubuntu.image_id
 #   instance_type = "t2.micro"
-#   key_name      = "insomenia-public-keypair"
+#   key_name      = "dev"
 
 #   vpc_security_group_ids = [
 #     module.security_group.id,
@@ -149,7 +149,7 @@ EOT
 resource "aws_instance" "provisioner" {
   ami           = data.aws_ami.ubuntu.image_id
   instance_type = "t2.micro"
-  key_name      = "insomenia-public-keypair"
+  key_name      = "dev"
 
   vpc_security_group_ids = [
     module.security_group.id,

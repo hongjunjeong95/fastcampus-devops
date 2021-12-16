@@ -42,7 +42,7 @@ resource "aws_instance" "amazon" {
   ami           = data.aws_ami.amazon.image_id
   instance_type = "t2.micro"
   subnet_id     = local.subnet_groups["public"].ids[0]
-  key_name      = "insomenia-public-keypair"
+  key_name      = "dev"
 
   associate_public_ip_address = true
   vpc_security_group_ids = [
@@ -63,7 +63,7 @@ resource "aws_instance" "ubuntu" {
   ami           = data.aws_ami.ubuntu.image_id
   instance_type = "t2.micro"
   subnet_id     = local.subnet_groups["public"].ids[0]
-  key_name      = "insomenia-public-keypair"
+  key_name      = "dev"
 
   associate_public_ip_address = true
   vpc_security_group_ids = [
