@@ -22,6 +22,7 @@ build {
 
   provisioner "shell" {
     inline = [
+      # source.name = nginx / source.type = amazon-ebs
       "echo ${source.name} and ${source.type}",
       # "whoami",
       "sudo apt-get install -y nginx",
